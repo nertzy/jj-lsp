@@ -255,6 +255,29 @@ impl LanguageServer for Backend {
         Ok(Some(code_actions))
     }
 
+    async fn diagnostic(
+        &self,
+        params: DocumentDiagnosticParams,
+    ) -> Result<DocumentDiagnosticReportResult> {
+        let diagnostics = self
+            .diagnostics_and_code_actions
+            .lock()
+            .await
+            .get(&params.text_document.uri)
+            .map(|items| items.iter().map(|(d, _)| d.clone()).collect())
+            .unwrap_or_default();
+
+        Ok(DocumentDiagnosticReportResult::Report(
+            DocumentDiagnosticReport::Full(RelatedFullDocumentDiagnosticReport {
+                related_documents: None,
+                full_document_diagnostic_report: FullDocumentDiagnosticReport {
+                    result_id: None,
+                    items: diagnostics,
+                },
+            }),
+        ))
+    }
+
     async fn shutdown(&self) -> Result<()> {
         Ok(())
     }
